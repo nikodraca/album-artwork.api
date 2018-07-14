@@ -7,9 +7,9 @@ import time
 import sys
 import csv
 from datetime import datetime
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
-from utils import get_albums_from_db
+from utils import get_albums_from_db, render_image
 from flask_cors import CORS, cross_origin
 from flask.json import jsonify
 
@@ -18,30 +18,21 @@ api = Api(app)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-parser = reqparse.RequestParser()
-parser.add_argument('albumsList', action='append')
 
 
 class SearchAlbum(Resource):
 	@cross_origin()
 	def get(self, query):
-		"""
-		GET album
-		"""
-
 		resp = get_albums_from_db(query)
-
-		pprint(resp)
 
 		return jsonify(resp[:5])
 
 class RenderPoster(Resource):
 	@cross_origin()
 	def post(self):
-		args = parser.parse_args()
-		albums_list = args['albumsList']
+		json_data = request.get_json(force=True)
 
-		return str(albums_list)
+		return render_image(json_data['album_list'])
 
 
 

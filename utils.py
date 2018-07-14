@@ -90,6 +90,7 @@ def color_palette_from_url(url):
 
 
 def render_image(album_list):
+
 	img = Image.open("static/blank.png")
 	draw = ImageDraw.Draw(img)
 	font = ImageFont.truetype("Helvetica", 12)
@@ -108,13 +109,11 @@ def render_image(album_list):
 		v_gap += 100
 
 
-	img.show()
+	buffered = io.BytesIO()
+	img.save(buffered, format="PNG")
+	image_base_64_string = base64.b64encode(buffered.getvalue())
 
-	# buffer = cStringIO.StringIO()
-	# img.save(buffer, format="PNG")
-	# image_base_64_string = base64.b64encode(buffer.getvalue())
-
-	# return image_base_64_string
+	return image_base_64_string
 
 
 def get_albums_from_db(query):
