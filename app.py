@@ -9,7 +9,7 @@ import csv
 from datetime import datetime
 from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
-from utils import get_albums_from_db, render_image
+from utils import get_albums_from_db, render_image, email_to_db
 from flask_cors import CORS, cross_origin
 from flask.json import jsonify
 
@@ -34,6 +34,12 @@ class RenderPoster(Resource):
 
 		return render_image(json_data['album_list'])
 
+class EmailList(Resource):
+	@cross_origin()
+	def post(self):
+		json_data = request.get_json(force=True)
+
+		return jsonify(email_to_db(json_data['email']))
 
 
 class Index(Resource):
@@ -42,6 +48,7 @@ class Index(Resource):
 
 api.add_resource(SearchAlbum, '/search_album/<query>')
 api.add_resource(RenderPoster, '/render_poster')
+api.add_resource(EmailList, '/email_list')
 api.add_resource(Index, '/')
 
 if __name__ == "__main__":

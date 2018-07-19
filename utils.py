@@ -91,9 +91,11 @@ def color_palette_from_url(url):
 
 def render_image(album_list):
 
-	img = Image.open("static/blank.png")
+	img = Image.open("static/img/blank_light.png")
 	draw = ImageDraw.Draw(img)
 	font = ImageFont.truetype("Helvetica", 12)
+
+	img_width, img_height = img.size
 
 	v_gap = 100
 
@@ -107,6 +109,9 @@ def render_image(album_list):
 		draw.text((100, v_gap+30),"{} - {}".format(album['artist']['name'], album['name']),(0,0,0),font=font)
 
 		v_gap += 100
+
+
+	img.show()
 
 
 	buffered = io.BytesIO()
@@ -127,6 +132,14 @@ def get_albums_from_db(query):
 		res.append(album)
 
 	return res
+
+def email_to_db(email):
+	email_collection = db['emails']
+	email_obj = {"email" : email}
+
+	email_id = email_collection.insert_one(email_obj).inserted_id
+
+	return {"email" : email}
 
 
 
