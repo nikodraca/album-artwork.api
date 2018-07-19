@@ -95,23 +95,37 @@ def render_image(album_list):
 	draw = ImageDraw.Draw(img)
 	font = ImageFont.truetype("Helvetica", 12)
 
+	poster_title_text = "Kanye West Discography"
+	poster_title_font = ImageFont.truetype("Helvetica", 40)
+
+
 	img_width, img_height = img.size
 
-	v_gap = 100
+	# this is fucking weird lol
+	# I just wanted something that is proportional
+	album_len_spacing = len(album_list) + 2
+	v_gap_spacing = img_height/album_len_spacing - (img_height/album_len_spacing/album_len_spacing)
+	h_gap_spacing = (img_width/13)
+
+	v_gap = v_gap_spacing * 2
 
 	for album in album_list:
-		h_gap = 100
+		h_gap = h_gap_spacing * 2
 
 		for color in album['color_palette']:
-			draw.line((h_gap, v_gap, h_gap+100, v_gap), fill=tuple(color), width=40)
-			h_gap += 100
+			draw.line((h_gap, v_gap, h_gap+h_gap_spacing, v_gap), fill=tuple(color), width=40)
+			h_gap += h_gap_spacing
 
-		draw.text((100, v_gap+30),"{} - {}".format(album['artist']['name'], album['name']),(0,0,0),font=font)
+		draw.text((h_gap_spacing * 2, v_gap+30),"{} - {}".format(album['artist']['name'], album['name']),(0,0,0),font=font)
 
-		v_gap += 100
+		v_gap += v_gap_spacing
 
 
-	img.show()
+	draw.text((h_gap_spacing * 2, v_gap), poster_title_text, (0,0,0),font=poster_title_font)
+
+
+
+	# img.show()
 
 
 	buffered = io.BytesIO()
