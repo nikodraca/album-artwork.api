@@ -10,6 +10,7 @@ from PIL import Image, ImageFont, ImageDraw
 from pymongo import MongoClient
 import creds
 from fake_useragent import UserAgent
+import numpy
 
 # init mongo connection
 client = MongoClient('mongodb://{}:{}@ds131551.mlab.com:31551/album-artwork'.format(creds.MONGO_USERNAME, creds.MONGO_PASSWORD))
@@ -89,15 +90,58 @@ def color_palette_from_url(url):
 	return res
 
 
-def render_image(album_list):
+def find_coeffs(pb, pa):
+    matrix = []
+    for p1, p2 in zip(pa, pb):
+        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
 
+    A = numpy.matrix(matrix, dtype=numpy.float)
+    B = numpy.array(pb).reshape(8)
+
+    res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
+    return numpy.array(res).reshape(8)
+
+
+def render_poster_mockups(img):
+
+	img_width, img_height = img.size
+
+	poster_1 = Image.open("static/img/poster_1.png")
+	poster_1 = poster_1.convert("RGBA")
+
+	poster_2 = Image.open("static/img/poster_2.png")
+	poster_2 = poster_2.convert("RGBA")
+
+
+	coeffs = find_coeffs(
+	[(0, 0), (img_width, 0), (img_width, img_height), (0, img_height)],
+	[(20, 20), (1255, 5), (1287, 1777), (45, 1785)])
+
+	img = img.transform(img.size, Image.PERSPECTIVE, coeffs ,Image.BILINEAR, fillcolor="red")
+	poster_1.paste(img, (1000, 200), mask=img)
+
+	buffered = io.BytesIO()
+	poster_1.save(buffered, format="PNG")
+
+	buffered = io.BytesIO()
+	poster_1.save(buffered, format="PNG")
+	image_base_64_string = base64.b64encode(buffered.getvalue())
+
+	return image_base_64_string, image_base_64_string
+
+
+def render_image(album_list):
 	img = Image.open("static/img/blank_light.png")
+	img = img.convert("RGBA")
+
 	draw = ImageDraw.Draw(img)
 	font = ImageFont.truetype("Helvetica", 12)
 
 	poster_title_text = "Kanye West Discography"
 	poster_title_font = ImageFont.truetype("Helvetica", 40)
 
+	#### Create poster
 
 	img_width, img_height = img.size
 
@@ -123,17 +167,13 @@ def render_image(album_list):
 
 	draw.text((h_gap_spacing * 2, v_gap), poster_title_text, (0,0,0),font=poster_title_font)
 
+	#### END Create poster
 
+	#### Skew image
 
-	# img.show()
+	poster_1, poster_2 = render_poster_mockups(img)
 
-
-	buffered = io.BytesIO()
-	img.save(buffered, format="PNG")
-	image_base_64_string = base64.b64encode(buffered.getvalue())
-
-	return image_base_64_string
-
+	return poster_1
 
 def get_albums_from_db(query):
 
