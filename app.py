@@ -32,7 +32,7 @@ class RenderPoster(Resource):
 	def post(self):
 		json_data = request.get_json(force=True)
 
-		return render_image(json_data['album_list'])
+		return jsonify(render_image(json_data))
 
 class EmailList(Resource):
 	@cross_origin()

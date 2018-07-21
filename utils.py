@@ -11,6 +11,7 @@ from pymongo import MongoClient
 import creds
 from fake_useragent import UserAgent
 import numpy
+from time import gmtime, strftime
 
 # init mongo connection
 client = MongoClient('mongodb://{}:{}@ds131551.mlab.com:31551/album-artwork'.format(creds.MONGO_USERNAME, creds.MONGO_PASSWORD))
@@ -103,42 +104,32 @@ def find_coeffs(pb, pa):
     return numpy.array(res).reshape(8)
 
 
-def render_poster_mockups(img):
-
+def render_poster_mockups(img, img_path, pb, paste_pos):
 	img_width, img_height = img.size
 
-	poster_1 = Image.open("static/img/poster_1.png")
-	poster_1 = poster_1.convert("RGBA")
+	poster = Image.open("static/img/{}".format(img_path))
+	poster = poster.convert("RGBA")
 
-	poster_2 = Image.open("static/img/poster_2.png")
-	poster_2 = poster_2.convert("RGBA")
+	coeffs = find_coeffs([(0, 0), (img_width, 0), (img_width, img_height), (0, img_height)], pb)
 
-
-	coeffs = find_coeffs(
-	[(0, 0), (img_width, 0), (img_width, img_height), (0, img_height)],
-	[(20, 20), (1255, 5), (1287, 1777), (45, 1785)])
-
-	img = img.transform(img.size, Image.PERSPECTIVE, coeffs ,Image.BILINEAR, fillcolor="red")
-	poster_1.paste(img, (1000, 200), mask=img)
+	poster_img = img.transform(img.size, Image.PERSPECTIVE, coeffs ,Image.BILINEAR, fillcolor="red")
+	poster.paste(poster_img, paste_pos, mask=poster_img)
 
 	buffered = io.BytesIO()
-	poster_1.save(buffered, format="PNG")
-
-	buffered = io.BytesIO()
-	poster_1.save(buffered, format="PNG")
+	poster.save(buffered, format="PNG")
 	image_base_64_string = base64.b64encode(buffered.getvalue())
 
-	return image_base_64_string, image_base_64_string
+	return image_base_64_string.decode("utf-8")
 
 
-def render_image(album_list):
+def render_image(json_data):
 	img = Image.open("static/img/blank_light.png")
 	img = img.convert("RGBA")
 
 	draw = ImageDraw.Draw(img)
 	font = ImageFont.truetype("Helvetica", 12)
 
-	poster_title_text = "Kanye West Discography"
+	poster_title_text = json_data['album_title']
 	poster_title_font = ImageFont.truetype("Helvetica", 40)
 
 	#### Create poster
@@ -147,13 +138,13 @@ def render_image(album_list):
 
 	# this is fucking weird lol
 	# I just wanted something that is proportional
-	album_len_spacing = len(album_list) + 2
+	album_len_spacing = len(json_data['album_list']) + 2
 	v_gap_spacing = img_height/album_len_spacing - (img_height/album_len_spacing/album_len_spacing)
 	h_gap_spacing = (img_width/13)
 
 	v_gap = v_gap_spacing * 2
 
-	for album in album_list:
+	for album in json_data['album_list']:
 		h_gap = h_gap_spacing * 2
 
 		for color in album['color_palette']:
@@ -167,13 +158,11 @@ def render_image(album_list):
 
 	draw.text((h_gap_spacing * 2, v_gap), poster_title_text, (0,0,0),font=poster_title_font)
 
-	#### END Create poster
+	poster_1 = render_poster_mockups(img, "poster_1_sm.png", [(22, 22), (528, 17), (543, 749), (29, 754)], (409, 72))
+	poster_2 = render_poster_mockups(img, "poster_2_sm.png", [(28, 20), (262, 21), (260, 362), (22, 361)], (563, 274))
 
-	#### Skew image
+	return [poster_1, poster_2]
 
-	poster_1, poster_2 = render_poster_mockups(img)
-
-	return poster_1
 
 def get_albums_from_db(query):
 
