@@ -75,6 +75,9 @@ def album_to_db(album_resp):
 	if len(albums_list) > 0:
 		post_ids = albums_collection.insert_many(albums_list).inserted_ids
 
+		for a in albums_list:
+			a['_id'] = str(a['_id'])
+
 	return albums_list
 
 
