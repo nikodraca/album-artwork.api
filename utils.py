@@ -52,10 +52,11 @@ def search_for_album(album_name):
 
 def album_to_db(album_resp):
 	albums_list = []
+	albums_collection = db['albums']
 
 	for album in album_resp:
 
-		if album['album_type'] == 'album':
+		if album['album_type'] == 'album' and not (albums_collection.find_one({"album_id" : album['id']})):
 			album_dict = {
 				"album_id" : album['id'],
 				"name" : album['name'],
@@ -71,9 +72,8 @@ def album_to_db(album_resp):
 			albums_list.append(album_dict)
 			pprint(album_dict)
 
-	albums_collection = db['albums']
-
-	post_ids = albums_collection.insert_many(albums_list).inserted_ids
+	if len(albums_list) > 0:
+		post_ids = albums_collection.insert_many(albums_list).inserted_ids
 
 	return albums_list
 
@@ -185,9 +185,8 @@ def email_to_db(email):
 	return {"email" : email}
 
 
-
-# search_results = search_for_album("Kid Cudi")
-# albums_list = album_to_db(search_results['albums']['items'])
+search_results = search_for_album("Childish Gambino")
+albums_list = album_to_db(search_results['albums']['items'])
 # albums_list = get_albums_from_db("kanye")
 
 # render_image(albums_list)
